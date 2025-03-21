@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress Test</title>
+</head>
+<body>
+    <h1>Stress Test Your System</h1>
+    <form id="stressForm">
+        <label for="cpu">Number of CPU Cores:</label>
+        <input type="number" id="cpu" name="cpu" min="1" required>
+        <br><br>
+        <label for="ram">Memory Load (MB):</label>
+        <input type="number" id="ram" name="ram" min="1" required>
+        <br><br>
+        <button type="submit">Run Stress Test</button>
+    </form>
+
+    <script>
+        document.getElementById("stressForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            let cpu = document.getElementById("cpu").value;
+            let ram = document.getElementById("ram").value;
+
+            fetch("/run-stress", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ cpu: cpu, ram: ram })
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))  // Alert the message from Flask
+            .catch(error => console.error("Error:", error));
+        });
+    </script>
+</body>
+</html>
