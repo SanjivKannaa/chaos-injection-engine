@@ -1,0 +1,35 @@
+version: "3.3"
+services:
+  cie-backend:
+    container_name: chaos-injection-engine-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - ./backend:/app
+    env_file: ./backend/.env
+    ports:
+      - "8080:8080"
+    command: ["python3", "main.py"]
+    networks:
+      - cie-network
+  mysql:
+    image: mysql:8.0
+    container_name: chaos-injection-engine-mysql
+    restart: always
+    env_file: ./backend/.env
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - cie-network
+    # use expose if db and backend are in diff networks or hosts
+    # ports:
+    #   - "3306:3306"
+    expose:
+      - 3306
+
+networks:
+  cie-network:
+volumes:
+  mysql_data:
