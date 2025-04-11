@@ -20,12 +20,18 @@
 |        |       |- network_failure.py
 |        |
 |        |- injections/
+|        |           |- resource_gathering/
+|        |           |                   |- main.py
+|        |           |
 |        |           |- resource_exhaustion/
-|        |           |                    |- cpu_stress.py
-|        |           |                    |- mem_stress.py
+|        |           |                    |- cpu.py
+|        |           |                    |- mem.py
+|        |           |                    |- storage.py
 |        |           |
 |        |           |- microservice_failure/
-|        |           |                    |- ;).py
+|        |           |                    |- stop_instance.py
+|        |           |                    |- restart_instance.py
+|        |           |                    |- az_outage.py
 |        |           |
 |        |           |- network_failure/
 |        |           |                |- ;).py

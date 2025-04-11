@@ -1,3 +1,5 @@
 *venv*
 *.env
 *pycache*
+backend/injections/resource_exhaustion/playbook.yml
+backend/injections/resource_exhaustion/inventory
