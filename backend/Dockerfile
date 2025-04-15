@@ -13,20 +13,20 @@ RUN apt-get update && \
     less \
     ca-certificates \
     zip \
-    ansible \
+    ansible && \
     # Install Terraform
-    && wget https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip \
-    && unzip terraform_1.7.5_linux_amd64.zip \
-    && mv terraform /usr/local/bin/ \
-    && rm terraform_1.7.5_linux_amd64.zip \
+    wget https://releases.hashicorp.com/terraform/1.7.5/terraform_1.7.5_linux_amd64.zip && \
+    unzip terraform_1.7.5_linux_amd64.zip && \
+    mv terraform /usr/local/bin/ && \
+    rm terraform_1.7.5_linux_amd64.zip && \
     # Install AWS CLI v2
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf aws awscliv2.zip \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf aws awscliv2.zip && \
     # Clean up
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and install Python dependencies
 RUN pip install --upgrade pip

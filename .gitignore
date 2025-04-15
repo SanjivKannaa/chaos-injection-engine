@@ -3,3 +3,6 @@
 *pycache*
 *playbook.yml
 *inventory
+backend/start_ec2.py
+backend/stop_ec2.py
+backend/restart_ec2.py
