@@ -16,3 +16,10 @@ services:
     ports:
       - "8080:8080"
     command: ["python3", "main.py"]
+  mysql:
+    image: mysql:8.0
+    container_name: chaos-injection-engine-mysql
+    restart: always
+    env_file: ./backend/.env
+    expose:
+      - 3306

@@ -79,7 +79,7 @@ def stop():
         f.writelines("\nfrom chaoslib.experiment import run_experiment")
         f.writelines("\nstop_experiment="+str(stop_experiment))
         f.writelines("\nrun_experiment(stop_experiment)")
-    subprocess.run(["aws ec2 stop-instances --instance-ids ", data.get("instance_ids")], shell=True)
+    subprocess.run(["aws ec2 stop-instances --instance-ids " + data.get("instance_ids")], shell=True)
     return make_response({"message": "done"}), 200
 
 @microservice_failure_bp.route('/restart', methods=['POST'])
@@ -116,6 +116,6 @@ def restart():
         f.writelines("\nfrom chaoslib.experiment import run_experiment")
         f.writelines("\nrestart_experiment="+str(restart_experiment))
         f.writelines("\nrun_experiment(restart_experiment)")
-    subprocess.run(["aws ec2 stop-instances --instance-ids ", data.get("instance_ids")], shell=True)
-    subprocess.run(["aws ec2 start-instances --instance-ids ", data.get("instance_ids")], shell=True)
+    subprocess.run(["aws ec2 stop-instances --instance-ids " + data.get("instance_ids")], shell=True)
+    subprocess.run(["aws ec2 start-instances --instance-ids " + data.get("instance_ids")], shell=True)
     return make_response({"message": "done"}), 200
