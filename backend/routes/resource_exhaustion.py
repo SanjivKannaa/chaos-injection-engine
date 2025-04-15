@@ -56,7 +56,7 @@ def mem(worker_count="1", memory="500000", timeout="10s", public_ip="localhost")
         f.write(inventory)
     run(["ansible-playbook", "-i", "inventory", "playbook.yml"])
 
-def storage(storage="1", timeout="10s", public_ip="localhost"):
+def storage(storage_p="1", timeout="10s", public_ip="localhost"):
     playbook = dedent(f'''
         ---
         - name: Stress Load Average on target host(s)
@@ -70,7 +70,7 @@ def storage(storage="1", timeout="10s", public_ip="localhost"):
                 update_cache: yes
 
             - name: Inject load average stress
-              command: stress-ng --hdd {storage} --timeout {timeout}
+              command: stress-ng --hdd {storage_p} --timeout {timeout}
     ''')
     # x storage = x workers * 1GB per worker
     inventory = f'''{public_ip} ansible_user=admin ansible_ssh_private_key_file=~/aws-default.pem'''
@@ -85,11 +85,12 @@ resource_exhaustion_bp = Blueprint('resource_exhaustion', __name__)
 @resource_exhaustion_bp.route('/cpu', methods=['POST'])
 def cpu_ep():
     data = request.json
+    cpu_count = data.get("cpu_count")
     cpu_load = data.get("cpu_load")
     timeout = data.get("timeout")
     public_ip = data.get("public_ip")
     try:
-        cpu(cpu_load, timeout, public_ip)
+        cpu(cpu_count, cpu_load, timeout, public_ip)
         return make_response({
             "message": "done"
         }), 200
@@ -101,11 +102,13 @@ def cpu_ep():
 @resource_exhaustion_bp.route('/mem', methods=['POST'])
 def mem_ep():
     data = request.json
-    cpu_load = data.get("cpu_load")
+    # worker_count="1", memory="500000", timeout="10s", public_ip="localhost"
+    worker_count = data.get("worker_count")
+    memory = data.get("memory")
     timeout = data.get("timeout")
     public_ip = data.get("public_ip")
     try:
-        cpu(cpu_load, timeout, public_ip)
+        mem(worker_count, memory, timeout, public_ip)
         return make_response({
             "message": "done"
         }), 200
@@ -117,15 +120,15 @@ def mem_ep():
 @resource_exhaustion_bp.route('/storage', methods=['POST'])
 def storage_ep():
     data = request.json
-    storage = data.get("storage")
+    storage_p = data.get("storage")
     timeout = data.get("timeout")
     public_ip = data.get("public_ip")
     try:
-        cpu(storage, timeout, public_ip)
+        storage(storage_p, timeout, public_ip)
         return make_response({
             "message": "done"
         }), 200
     except Exception as e:
         return make_response({
-            "error": e
+            "error": "e"
         }), 500
