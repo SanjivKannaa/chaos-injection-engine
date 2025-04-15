@@ -128,8 +128,7 @@ def get_infrastructure_summary():
     resources = extract_resources(tf_state)
 
     summary = {
-        "direct_ec2_instances": [],
-        "auto_scaling_groups": []
+        "ec2_instances": [],
     }
 
     # Direct EC2 Instances
@@ -149,7 +148,7 @@ def get_infrastructure_summary():
             "instance_type": values.get("instance_type", "N/A"),
             "tags": tags
         }
-        summary["direct_ec2_instances"].append(instance_info)
+        summary["ec2_instances"].append(instance_info)
 
     # Auto Scaling Groups and their instances
     asg_resources = filter_asg_resources(resources)
@@ -183,18 +182,7 @@ def get_infrastructure_summary():
                     "instance_type": instance.get('InstanceType'),
                     "tags": instance['Tags']
                 }
-                instances_info.append(instance_data)
-
-        asg_info = {
-            "asg_name": asg_name,
-            "asg_name_tag": asg_name_tag,
-            "desired_capacity": values.get('desired_capacity'),
-            "min_size": values.get('min_size'),
-            "max_size": values.get('max_size'),
-            "instances": instances_info
-        }
-
-        summary["auto_scaling_groups"].append(asg_info)
+                summary["ec2_instances"].append(instance_data)
 
     return summary
 
