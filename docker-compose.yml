@@ -8,6 +8,9 @@ services:
     restart: always
     volumes:
       - ./backend:/app
+      - ~/chaosbank/deployment/v1:/v1
+      - ~/chaosbank/deployment/v2:/v2
+      - ~/.aws:/root/.aws
     env_file: ./backend/.env
     ports:
       - "8080:8080"
@@ -28,7 +31,7 @@ services:
     #   - "3306:3306"
     expose:
       - 3306
-  
+
   prometheus:
     image: docker.io/prom/prometheus:v3.2.1
     container_name: prometheus
@@ -39,7 +42,7 @@ services:
       - ./config/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus-data:/prometheus
     restart: unless-stopped
-  
+
   grafana:
     image: docker.io/grafana/grafana-oss:11.6.0
     container_name: grafana
@@ -48,7 +51,7 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     restart: unless-stopped
-  
+
 volumes:
   prometheus-data:
     driver: local

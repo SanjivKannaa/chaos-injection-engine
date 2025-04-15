@@ -1,7 +1,11 @@
-import json
+from flask import Blueprint, request, jsonify, make_response, render_template
+from extensions import db
+import os
+from models import Resources
 import subprocess
+import json
 
-terraform_dir = "/v2/"
+terraform_dir = "/v1/"
 
 def get_terraform_state_json() -> dict:
     result = subprocess.run(
@@ -119,76 +123,90 @@ def get_ec2_instance_details(instance_ids):
     
     return instances
 
-def main():
+def get_infrastructure_summary():
     tf_state = get_terraform_state_json()
     resources = extract_resources(tf_state)
 
-    # Print direct EC2 instances
+    summary = {
+        "direct_ec2_instances": [],
+        "auto_scaling_groups": []
+    }
+
+    # Direct EC2 Instances
     ec2_instances = filter_ec2_instances(resources)
-    print("Discovered Direct EC2 Instances:\n")
 
     for ec2 in ec2_instances:
         values = ec2['values']
         tags = values.get("tags", {})
-        instance_name = tags.get("Name", "Unnamed")
+        instance_info = {
+            "name": tags.get("Name", "Unnamed"),
+            "instance_id": values.get("id", "N/A"),
+            "public_ip": values.get("public_ip", "N/A"),
+            "private_ip": values.get("private_ip", "N/A"),
+            "availability_zone": values.get("availability_zone", "N/A"),
+            "subnet_id": values.get("subnet_id", "N/A"),
+            "ami_id": values.get("ami", "N/A"),
+            "instance_type": values.get("instance_type", "N/A"),
+            "tags": tags
+        }
+        summary["direct_ec2_instances"].append(instance_info)
 
-        print(f"Instance Name   : {instance_name}")
-        print(f"Instance ID     : {values.get('id', 'N/A')}")
-        print(f"Public IP       : {values.get('public_ip', 'N/A')}")
-        print(f"Private IP      : {values.get('private_ip', 'N/A')}")
-        print(f"Availability Zone: {values.get('availability_zone', 'N/A')}")
-        print(f"Subnet ID       : {values.get('subnet_id', 'N/A')}")
-        print(f"AMI ID          : {values.get('ami', 'N/A')}")
-        print(f"Instance Type   : {values.get('instance_type', 'N/A')}")
-        print(f"Tags            : {json.dumps(tags)}")
-        print("-" * 60)
-    
-    # Get ASG info and instances
+    # Auto Scaling Groups and their instances
     asg_resources = filter_asg_resources(resources)
-    print("\nDiscovered Auto Scaling Groups and their Instances:\n")
-    
+
     for asg in asg_resources:
         values = asg['values']
         asg_name = values.get('name')
         asg_tags = values.get('tag', [])
         
-        # Get the Name tag value if present
         asg_name_tag = "Unnamed"
         for tag in asg_tags:
             if tag.get('key') == 'Name':
                 asg_name_tag = tag.get('value')
                 break
-        
-        print(f"ASG Name: {asg_name} ({asg_name_tag})")
-        print(f"Desired Capacity: {values.get('desired_capacity')}")
-        print(f"Min/Max Size: {values.get('min_size')}/{values.get('max_size')}")
-        
-        # Get instances in this ASG
-        instance_ids = get_asg_instances(asg_name)
-        
-        if not instance_ids:
-            print("No instances found in this ASG")
-            print("-" * 60)
-            continue
-        
-        print(f"Found {len(instance_ids)} instances in ASG: {', '.join(instance_ids)}")
-        print("\nInstance Details:")
-        
-        instances = get_ec2_instance_details(instance_ids)
-        
-        for idx, instance in enumerate(instances, 1):
-            print(f"\n  Instance #{idx}:")
-            print(f"  Instance Name   : {instance['Tags'].get('Name', 'Unnamed')}")
-            print(f"  Instance ID     : {instance['InstanceId']}")
-            print(f"  Public IP       : {instance['PublicIp']}")
-            print(f"  Private IP      : {instance['PrivateIp']}")
-            print(f"  Availability Zone: {instance['AvailabilityZone']}")
-            print(f"  Subnet ID       : {instance['SubnetId']}")
-            print(f"  AMI ID          : {instance['ImageId']}")
-            print(f"  Instance Type   : {instance['InstanceType']}")
-            print(f"  Tags            : {json.dumps(instance['Tags'])}")
-        
-        print("-" * 60)
 
-if __name__ == "__main__":
-    main()
+        instance_ids = get_asg_instances(asg_name)
+        instances_info = []
+
+        if instance_ids:
+            instances = get_ec2_instance_details(instance_ids)
+
+            for instance in instances:
+                instance_data = {
+                    "name": instance['Tags'].get('Name', 'Unnamed'),
+                    "instance_id": instance['InstanceId'],
+                    "public_ip": instance.get('PublicIp'),
+                    "private_ip": instance.get('PrivateIp'),
+                    "availability_zone": instance.get('AvailabilityZone'),
+                    "subnet_id": instance.get('SubnetId'),
+                    "ami_id": instance.get('ImageId'),
+                    "instance_type": instance.get('InstanceType'),
+                    "tags": instance['Tags']
+                }
+                instances_info.append(instance_data)
+
+        asg_info = {
+            "asg_name": asg_name,
+            "asg_name_tag": asg_name_tag,
+            "desired_capacity": values.get('desired_capacity'),
+            "min_size": values.get('min_size'),
+            "max_size": values.get('max_size'),
+            "instances": instances_info
+        }
+
+        summary["auto_scaling_groups"].append(asg_info)
+
+    return summary
+
+
+resource_gathering_bp = Blueprint('resource_gathering', __name__)
+
+@resource_gathering_bp.route('/', methods=["POST"])
+def gather(version="v1"):
+    data = request.json
+    global terraform_dir
+    terraform_dir = "/" + data.get("version") + "/"
+    try:
+        return make_response(get_infrastructure_summary()), 200
+    except Exception as e:
+        return make_response({"error": e}), 500
